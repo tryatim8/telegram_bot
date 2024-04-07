@@ -1,16 +1,40 @@
-# This is a sample Python script.
+import telebot
+from telebot.types import Message
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from config import ConfigSettings
+
+config = ConfigSettings()
+
+bot = telebot.TeleBot(config.bot_token.get_secret_value())
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+@bot.message_handler(commands=['start'])
+def handle_start(message: Message) -> None:
+    bot.send_message(message.chat.id, 'Добрый день, {}!'.format(message.from_user.first_name))
 
 
-# Press the green button in the gutter to run the script.
+@bot.message_handler(commands=['help'])
+def handle_start(message: Message) -> None:
+    bot.send_message(message.chat.id, '/start - Начало работы\n/hello_world - Привет мир\n'
+                                      'Ввести "Привет" - приветствие')
+
+
+@bot.message_handler(commands=['hello_world'])
+def send_hello_world(message):
+    bot.send_message(message.chat.id, 'Hello World!')
+
+
+@bot.message_handler(func=lambda message: message.text.title() == 'Привет')
+def hello_info(message):
+    bot.send_message(message.chat.id, 'Вас приветствует чат-бот поиска товаров интернет-магазина\n'
+                                      'Для получения списка команд отправьте /help')
+
+
+@bot.message_handler(func=lambda message: True)
+def echo_and_info(message):
+    bot.reply_to(message, message.text)
+    bot.send_message(message.chat.id, 'Для начала работы отправьте слово Привет')
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    bot.infinity_polling()
