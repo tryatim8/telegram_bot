@@ -1,16 +1,39 @@
+import copy
+
 import requests
 from typing import Dict
 
 
-def _make_response(url: str, search_query: str,
-                   headers: Dict, params: Dict,
-                   timeout: int = 10, success=200):
-
-    total_url = '{0}/{1}'.format(url, search_query)
+def _search_products(url: str, product_name: str,
+                     headers: Dict, params: Dict,
+                     timeout: int = 10, success=200):
+    """Обработчик SiteAPI. Возвращает поисковый запрос по названию товара - product_name"""
+    total_params = copy.deepcopy(params)
+    total_params['query'] = product_name
+    total_url = '{}/product-search'.format(url)
     response = requests.get(
         total_url,
         headers=headers,
-        params=params,
+        params=total_params,
+        timeout=timeout
+    )
+    status_code = response
+    if status_code == success:
+        return response
+    return status_code
+
+
+def _product_details(url: str, product_asin: str,
+                     headers: Dict, params: Dict,
+                     timeout: int = 10, success=200):
+    """Обработчик SiteAPI. Возвращает информацию о товаре по коду товара - product_asin"""
+    total_params = copy.deepcopy(params)
+    total_params['asin'] = product_asin
+    total_url = '{}/product-details'.format(url)
+    response = requests.get(
+        total_url,
+        headers=headers,
+        params=total_params,
         timeout=timeout
     )
     status_code = response
@@ -20,7 +43,10 @@ def _make_response(url: str, search_query: str,
 
 
 class SiteApiInterface:
+    @classmethod
+    def search_products(cls):
+        return _search_products
 
     @classmethod
-    def make_response(cls):
-        return _make_response
+    def product_details(cls):
+        return _product_details
