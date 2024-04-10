@@ -19,7 +19,7 @@ def handle_history(message) -> None:
         result.append(str(i_elem))
         if i_ord == 9:
             break
-    result_send = '\n'.join(result)
+    result_send = '\n'.join(reversed(result))
     bot.send_message(message.from_user.id, result_send)
     History.create(  # Записываем вызов команды в базу данных
         search_time=datetime.now(),
