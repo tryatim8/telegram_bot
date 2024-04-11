@@ -6,7 +6,7 @@ from tg_API.states import UserState
 # from site_API.core import site_api
 
 
-@bot.message_handler(state='*', commands=['custom'])
+@bot.message_handler(commands=['custom'])
 def handle_custom(message) -> None:
     user_id = message.from_user.id
     if User.get_or_none(User.user_id == user_id) is None:  # Проверка, зарегистрирован ли пользователь
@@ -49,6 +49,7 @@ def handle_custom_price_range(message) -> None:
     except (ValueError, IndexError):
         bot.send_message(message.from_user.id, 'Некорректный ввод (нужно два натуральных числа через пробел).\n'
                                                'Введите диапазон цен ещё раз')
+        return
     min_price = min(price_range_list)
     max_price = max(price_range_list)
     price_range = '-'.join(price_range_list)

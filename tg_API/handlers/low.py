@@ -6,7 +6,7 @@ from tg_API.states import UserState
 # from site_API.core import site_api
 
 
-@bot.message_handler(state='*', commands=['low'])
+@bot.message_handler(commands=['low'])
 def handle_low(message) -> None:
     user_id = message.from_user.id
     if User.get_or_none(User.user_id == user_id) is None:  # Проверка, зарегистрирован ли пользователь
