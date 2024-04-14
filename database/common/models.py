@@ -23,7 +23,7 @@ class History(BaseModel):
     search_time = DateTimeField()  # Время запроса
     user = ForeignKeyField(User, backref='commands_history')  # Привязка истории к пользователю
     command_name = TextField()  # Имя команды
-    query_name = TextField(null=True)  # Текст запроса (Название товара или его код)
+    product_name = TextField(null=True)  # Текст запроса (Название товара или его код)
     result_size = IntegerField(null=True)  # Количество предложенных товаров
     price_range = TextField(null=True)  # Диапазон цен (команда custom)
 
@@ -32,7 +32,7 @@ class History(BaseModel):
             num=self.command_order,
             dtime=self.search_time.strftime(DATETIME_FORMAT),
             comm=self.command_name,
-            name=self.query_name,
+            name=self.product_name,
             limit=self.result_size,
             range=self.price_range
         )

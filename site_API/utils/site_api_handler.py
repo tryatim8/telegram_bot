@@ -17,10 +17,7 @@ def _search_products(url: str, product_name: str,
         params=total_params,
         timeout=timeout
     )
-    status_code = response
-    if status_code == success:
-        return response
-    return status_code
+    return response
 
 
 def _product_details(url: str, product_asin: str,
@@ -36,10 +33,7 @@ def _product_details(url: str, product_asin: str,
         params=total_params,
         timeout=timeout
     )
-    status_code = response
-    if status_code == success:
-        return response
-    return status_code
+    return response
 
 
 class SiteApiInterface:
