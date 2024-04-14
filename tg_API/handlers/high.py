@@ -1,9 +1,11 @@
 from datetime import datetime
+from typing import List, Dict
 
 from tg_API.core import bot
 from database.common.models import User, History
 from tg_API.states import UserState
-# from site_API.core import site_api
+from site_API.core import site_api, url, headers, params
+from config import RESULT_LIMIT
 
 
 @bot.message_handler(commands=['high'])
@@ -21,7 +23,7 @@ def handle_high(message) -> None:
 @bot.message_handler(state=UserState.high_prod_name)
 def handle_high_prod_name(message) -> None:
     product_name = message.text
-    bot.send_message(message.from_user.id, 'Введите количество товаров')
+    bot.send_message(message.from_user.id, 'Введите количество товаров, до 15 штук')
     bot.set_state(message.from_user.id, UserState.high_result_size)
     with bot.retrieve_data(message.from_user.id) as data:
         data['new_high']['product_name'] = product_name
@@ -30,7 +32,9 @@ def handle_high_prod_name(message) -> None:
 @bot.message_handler(state=UserState.high_result_size)
 def handle_high_result_size(message) -> None:
     try:
-        result_size = int(message.text)
+        result_size = min(int(message.text), RESULT_LIMIT)
+        if result_size <= 0:
+            raise ValueError
     except ValueError:
         bot.send_message(message.from_user.id, 'Некорректный ввод (нужно натуральное число).\n'
                                                'Введите количество товаров ещё раз')
@@ -45,9 +49,26 @@ def handle_high_result_size(message) -> None:
         result_size=result_size
     ).save()
 
-    # TODO Написать код, обрабатывающий запрос поиска товаров в AmazonAPI.
-    # amazon_search = site_api.search_products()
-    # response = amazon_search(url, 'iphone', headers, params)
-    result = 'Те самые товары с Амазон по команде /high'
-    bot.send_message(message.from_user.id, result)
+    amazon_search = site_api.search_products()  # Функция для поиска товаров
+    response = amazon_search(url, product_name, headers, params)
+    if response.status_code != 200:
+        bot.send_message(message.from_user.id, 'Запрос не выполнен успешно. Попробуйте позже')
+        bot.delete_state(message.from_user.id)  # Убираем состояние
+        return
+    response_data: List[Dict] = sorted(response.json()['result'],
+                                       key=lambda x: x['price']['current_price'], reverse=True)
+    for i_ord, i_dict in enumerate(response_data):
+        product = (
+            f'{i_ord + 1}-й товар:\n'
+            f'asin - ID: {i_dict['asin']}\n'
+            f'Цена без скидки: {i_dict['price']['before_price']}\n'
+            f'Скидка: {i_dict['price']['savings_percent']} %\n'
+            f'Цена со скидкой: {i_dict['price']['current_price']}\n'
+            f'Рейтинг: {i_dict['reviews']['rating']}\n'
+            f'Валюта: {i_dict['price']['currency']}\n'
+            f'URL-ссылка: {i_dict['url']}\n'
+        )
+        bot.send_message(message.from_user.id, product)
+        if i_ord == result_size-1:
+            break
     bot.delete_state(message.from_user.id)  # Убираем состояние
