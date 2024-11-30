@@ -140,3 +140,4 @@ dmypy.json
 
 # the rest
 .swp
+/client.db
