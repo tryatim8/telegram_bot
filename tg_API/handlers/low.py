@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import List, Dict
+from typing import Dict, List
 
-from tg_API.core import bot
-from database.common.models import User, History
-from tg_API.states import UserState
-from site_API.core import site_api, url, headers, params
 from config import RESULT_LIMIT
+from database.common.models import History, User
+from site_API.core import headers, params, site_api, url
+from tg_API.core import bot
+from tg_API.states import UserState
 
 
 @bot.message_handler(commands=['low'])
@@ -31,44 +31,54 @@ def handle_low_prod_name(message) -> None:
 
 @bot.message_handler(state=UserState.low_result_size)
 def handle_low_result_size(message) -> None:
+    # Ограничение до 15 товаров
+    result_size = min(int(message.text), RESULT_LIMIT)
     try:
-        result_size = min(int(message.text), RESULT_LIMIT)  # Ограничение до 15 товаров
         if result_size <= 0:
             raise ValueError
     except ValueError:
-        bot.send_message(message.from_user.id, 'Некорректный ввод (нужно натуральное число).\n'
-                                               'Введите количество товаров ещё раз')
+        bot.send_message(
+            message.from_user.id,
+            'Некорректный ввод (нужно натуральное число).\n' +
+            'Введите количество товаров ещё раз',
+        )
         return
-    with bot.retrieve_data(message.from_user.id) as data:
-        product_name = data['new_low']['product_name']
+    with bot.retrieve_data(message.from_user.id) as user_data:
+        product_name = user_data['new_low']['product_name']
     History.create(  # Записываем вызов команды в базу данных
         search_time=datetime.now(),
         user=message.from_user.id,
         command_name='low',
         product_name=product_name,
-        result_size=result_size
+        result_size=result_size,
     ).save()
 
     amazon_search = site_api.search_products()  # Функция для поиска товаров
     response = amazon_search(url, product_name, headers, params)
-    if response.status_code != 200:
-        bot.send_message(message.from_user.id, 'Запрос не выполнен успешно. Попробуйте позже')
+    resp_ok_code = 200
+    if response.status_code != resp_ok_code:
+        bot.send_message(
+            message.from_user.id,
+            'Запрос не выполнен успешно. Попробуйте позже',
+        )
         bot.delete_state(message.from_user.id)  # Убираем состояние
         return
-    response_data: List[Dict] = sorted(response.json()['result'],
-                                       key=lambda x: x['price']['current_price'])
+    response_data: List[Dict] = sorted(
+        response.json()['result'],
+        key=lambda prod: prod['price']['current_price'],
+    )
     for i_ord, i_dict in enumerate(response_data):
         product = (
-            f'{i_ord + 1}-й товар:\n'
-            f'asin - ID: {i_dict['asin']}\n'
-            f'Цена без скидки: {i_dict['price']['before_price']}\n'
-            f'Скидка: {i_dict['price']['savings_percent']} %\n'
-            f'Цена со скидкой: {i_dict['price']['current_price']}\n'
-            f'Рейтинг: {i_dict['reviews']['rating']}\n'
-            f'Валюта: {i_dict['price']['currency']}\n'
-            f'URL-ссылка: {i_dict['url']}\n'
+            '{0}-й товар:\n'.format(i_ord + 1) +
+            'asin - ID: {0}\n'.format(i_dict['asin']) +
+            'Цена без скидки: {0}\n'.format(i_dict['price']['before_price']) +
+            'Скидка: {0} %\n'.format(i_dict['price']['savings_percent']) +
+            'Цена со скидкой: {0}\n'.format(i_dict['price']['current_price']) +
+            'Рейтинг: {0}\n'.format(i_dict['reviews']['rating']) +
+            'Валюта: {0}\n'.format(i_dict['price']['currency']) +
+            'URL-ссылка: {0}\n'.format(i_dict['url'])
         )
         bot.send_message(message.from_user.id, product)
-        if i_ord == result_size-1:
+        if i_ord == result_size - 1:
             break
     bot.delete_state(message.from_user.id)  # Убираем состояние

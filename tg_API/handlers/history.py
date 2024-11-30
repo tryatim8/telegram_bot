@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import List
 
+from database.common.models import History, User
 from tg_API.core import bot
-from database.common.models import User, History
 
 
 @bot.message_handler(commands=['history'])

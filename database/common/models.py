@@ -1,7 +1,14 @@
-from config import DATETIME_FORMAT
+from peewee import (
+    AutoField,
+    DateTimeField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
+    SqliteDatabase,
+    TextField,
+)
 
-from peewee import (SqliteDatabase, Model, IntegerField, AutoField,
-                    ForeignKeyField, DateTimeField, TextField)
+from config import DATETIME_FORMAT
 
 db = SqliteDatabase('client.db')
 

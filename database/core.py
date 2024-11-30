@@ -1,4 +1,4 @@
-from database.common.models import db, BaseModel
+from database.common.models import BaseModel, db
 
 
 def create_tables():

@@ -1,4 +1,5 @@
 import telebot
+
 from config import ConfigSettings
 
 config = ConfigSettings()

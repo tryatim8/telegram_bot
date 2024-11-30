@@ -1,7 +1,10 @@
-from telebot.handler_backends import StatesGroup, State
+"""Настройка состояний."""
+from telebot.handler_backends import State, StatesGroup
 
 
-class UserState(StatesGroup):  # Группа состояний
+class UserState(StatesGroup):
+    """Группа состояний."""
+
     low_prod_name = State()
     low_result_size = State()
     high_prod_name = State()

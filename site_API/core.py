@@ -1,6 +1,7 @@
+from pprint import pprint
+
 from config import ConfigSettings
 from site_API.utils.site_api_handler import SiteApiInterface
-from pprint import pprint
 
 config = ConfigSettings()
 

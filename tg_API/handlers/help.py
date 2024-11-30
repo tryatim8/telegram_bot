@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from tg_API.core import bot
-from database.common.models import User, History
 from config import DEFAULT_COMMANDS
+from database.common.models import History, User
+from tg_API.core import bot
 
 
 @bot.message_handler(commands=['help'])

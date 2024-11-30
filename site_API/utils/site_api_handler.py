@@ -1,7 +1,7 @@
 import copy
+from typing import Dict
 
 import requests
-from typing import Dict
 
 
 def _search_products(url: str, product_name: str,
