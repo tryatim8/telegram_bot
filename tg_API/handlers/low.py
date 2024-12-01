@@ -10,28 +10,33 @@ from tg_API.states import UserState
 
 @bot.message_handler(commands=['low'])
 def handle_low(message) -> None:
+    """Хэндлер команды low."""
     user_id = message.from_user.id
-    if User.get_or_none(User.user_id == user_id) is None:  # Проверка, зарегистрирован ли пользователь
+    if User.get_or_none(User.user_id == user_id) is None:
         bot.reply_to(message, 'Вы не зарегистрированы. Напишите /start')
         return
     bot.send_message(message.from_user.id, 'Введите название товара.')
     bot.set_state(message.from_user.id, UserState.low_prod_name)
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['new_low'] = {'user_id': user_id}
+    with bot.retrieve_data(message.from_user.id) as user_data:
+        user_data['new_low'] = {'user_id': user_id}
 
 
 @bot.message_handler(state=UserState.low_prod_name)
 def handle_low_prod_name(message) -> None:
+    """Хэндлер поиска товаров по имени продукта."""
     product_name = message.text
-    bot.send_message(message.from_user.id, 'Введите количество товаров, до 15 штук')
+    bot.send_message(
+        message.from_user.id,
+        'Введите количество товаров, до 15 штук',
+    )
     bot.set_state(message.from_user.id, UserState.low_result_size)
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['new_low']['product_name'] = product_name
+    with bot.retrieve_data(message.from_user.id) as user_data:
+        user_data['new_low']['product_name'] = product_name
 
 
 @bot.message_handler(state=UserState.low_result_size)
 def handle_low_result_size(message) -> None:
-    # Ограничение до 15 товаров
+    """Хэндлер поиска товаров с ограничением до 15 товаров."""
     result_size = min(int(message.text), RESULT_LIMIT)
     try:
         if result_size <= 0:
@@ -52,8 +57,12 @@ def handle_low_result_size(message) -> None:
         product_name=product_name,
         result_size=result_size,
     ).save()
+    find_and_send(message, product_name, result_size)
 
-    amazon_search = site_api.search_products()  # Функция для поиска товаров
+
+def find_and_send(message, product_name, result_size):
+    """Функция для поиска товаров и отправки пользователю."""
+    amazon_search = site_api.search_products()
     response = amazon_search(url, product_name, headers, params)
     resp_ok_code = 200
     if response.status_code != resp_ok_code:
